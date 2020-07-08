@@ -33,20 +33,16 @@ score = {[1] = 0,
          [2] = 0,
         }
 
--- states
---[[
-state_init_game
-choose_player
-state_select_position
-state_select_position
-]]
-          
---global_state = state_init_game
-
 -- play music, if we got it
 -- music(0)
 
-function init_game()
+function update_init_game()
+  global_state = state_title_screen
+
+  debugmsg = 'update_init_game()'
+end
+
+function update_init_match()
   ------------------------------------------------------------------
   -- Reset Global Variables
   ------------------------------------------------------------------
@@ -66,11 +62,12 @@ function init_game()
   grid_selector_position = 0
 
   global_state = state_select_position
+  --global_state = state_title_screen
 
-  debugmsg = 'init_game()'
+  debugmsg = 'update_init_match()'
 end
 
-function next_player()
+function update_next_player()
   --if currentplayer == -1 then currentplayer = flr(rnd(2)) + 1 -- https://pico-8.fandom.com/wiki/rnd
   if currentplayer == 1 then currentplayer = 2
   else currentplayer = 1
@@ -78,10 +75,10 @@ function next_player()
   
   global_state = state_select_position
 
-  debugmsg = 'next_player()'
+  debugmsg = 'update_next_player()'
 end
 
-function select_position()
+function update_select_position()
   x = grid_selector_position
 
   ------------------------------------------------------------------
@@ -133,7 +130,7 @@ function select_position()
     end
 	end
 
-  debugmsg = 'select_position()'
+  debugmsg = 'update_select_position()'
 end
 
 function check_win_condition()
@@ -232,25 +229,25 @@ function check_tie_condition()
   return result
 end
 
-function win_screen()
+function update_win_screen()
   r = 0
   r = wait_for_any_input()
 
-  if r == 1 then global_state = state_init_game end
+  if r == 1 then global_state = state_init_match end
 end
 
-function tie_screen()
+function update_title_screen()
   r = 0
   r = wait_for_any_input()
 
-  if r == 1 then global_state = state_init_game end
+  if r == 1 then global_state = state_init_match end
 end
 
-function title_screen()
+function update_tie_screen()
   r = 0
   r = wait_for_any_input()
 
-  if r == 1 then global_state = state_init_game end
+  if r == 1 then global_state = state_init_match end
 end
 
 function wait_for_any_input()
@@ -273,27 +270,39 @@ function drawspr(_spr,_x,_y,_c)
 end
 
 function _init()
-  state_init_game, state_next_player, state_select_position, state_win_screen, state_tie_screen = 1, 2, 3, 4, 5
+  state_init_match, state_init_game, state_next_player, state_select_position, state_win_screen, state_tie_screen, state_title_screen = 1, 2, 3, 4, 5, 6, 7
 
-  draw_funcs = {[state_init_game]=draw_main_screen,
+  draw_funcs = {[state_init_game]=draw_nothing,
+                [state_init_match]=draw_main_screen,
                 [state_next_player]=draw_main_screen,
                 [state_select_position]=draw_main_screen,
                 [state_win_screen]=draw_win_screen,
-                [state_tie_screen]=draw_main_screen
+                [state_tie_screen]=draw_main_screen,
+                [state_title_screen]=draw_title_screen
               }
             
+  update_funcs = {[state_init_game]=update_init_game,
+                [state_init_match]=update_init_match,
+                [state_next_player]=update_next_player,
+                [state_select_position]=update_select_position,
+                [state_win_screen]=update_win_screen,
+                [state_tie_screen]=update_tie_screen,
+                [state_title_screen]=update_title_screen
+              }
   --_draw = _draw_main_screen()
   global_state = state_init_game
 end
 
 function _update()
-  if global_state == state_init_game then init_game()
-  elseif global_state == state_next_player then next_player()
-  elseif global_state == state_select_position then select_position()
-  elseif global_state == state_win_screen then win_screen()
-  elseif global_state == state_tie_screen then tie_screen()
-  else debugmsg = 'invalid global state!!!'
-  end
+  update_funcs[global_state]()
+
+  -- if global_state == state_init_game then update_init_game()
+  -- elseif global_state == state_next_player then update_next_player()
+  -- elseif global_state == state_select_position then update_select_position()
+  -- elseif global_state == state_win_screen then update_win_screen()
+  -- elseif global_state == state_tie_screen then update_tie_screen()
+  -- else debugmsg = 'invalid global state!!!'
+  -- end
 end
 
 --function _draw()
@@ -354,8 +363,18 @@ end
 
 function draw_win_screen()
   draw_main_screen()
+end
 
-  print('this works', 1, 100, 12)
+function draw_nothing()
+  i=1
+end
+
+
+function draw_title_screen()
+  -- clear the screen
+  rectfill(0,0,128,128,3)
+
+  print('TIC TAC TOE', 1, 1, 11)
 end
 
 function draw_main_screen_headline_text()
