@@ -35,12 +35,13 @@ score = {[1] = 0,
 
 -- states
 --[[
-init_game
+state_init_game
 choose_player
-select_position
-win_screen
+state_select_position
+state_select_position
 ]]
-global_state = ''
+          
+--global_state = state_init_game
 
 -- play music, if we got it
 -- music(0)
@@ -64,7 +65,7 @@ function init_game()
   win_pos = {}
   grid_selector_position = 0
 
-  global_state = select_position
+  global_state = state_select_position
 
   debugmsg = 'init_game()'
 end
@@ -75,7 +76,7 @@ function next_player()
   else currentplayer = 1
   end
   
-  global_state = select_position
+  global_state = state_select_position
 
   debugmsg = 'next_player()'
 end
@@ -124,10 +125,10 @@ function select_position()
 
       if win_result == 1 then
         score[currentplayer] += 1
-        global_state = win_screen
+        global_state = state_win_screen
       elseif tie_result == 1 then
-        global_state = tie_screen
-      else global_state = next_player
+        global_state = state_tie_screen
+      else global_state = state_next_player
       end
     end
 	end
@@ -235,21 +236,21 @@ function win_screen()
   r = 0
   r = wait_for_any_input()
 
-  if r == 1 then global_state = init_game end
+  if r == 1 then global_state = state_init_game end
 end
 
 function tie_screen()
   r = 0
   r = wait_for_any_input()
 
-  if r == 1 then global_state = init_game end
+  if r == 1 then global_state = state_init_game end
 end
 
 function title_screen()
   r = 0
   r = wait_for_any_input()
 
-  if r == 1 then global_state = init_game end
+  if r == 1 then global_state = state_init_game end
 end
 
 function wait_for_any_input()
@@ -274,22 +275,23 @@ end
 function _init()
   state_init_game, state_next_player, state_select_position, state_win_screen, state_tie_screen = 1, 2, 3, 4, 5
 
-  draw_funcs = {init_game=draw_main_screen,
-                next_player=draw_main_screen,
-                select_position=draw_main_screen,
-                win_screen=draw_main_screen,
-                tie_screen=draw_main_screen
+  draw_funcs = {[state_init_game]=draw_main_screen,
+                [state_next_player]=draw_main_screen,
+                [state_select_position]=draw_main_screen,
+                [state_win_screen]=draw_win_screen,
+                [state_tie_screen]=draw_main_screen
               }
+            
   --_draw = _draw_main_screen()
-  global_state = init_game
+  global_state = state_init_game
 end
 
 function _update()
-  if global_state == init_game then init_game()
-  elseif global_state == next_player then next_player()
-  elseif global_state == select_position then select_position()
-  elseif global_state == win_screen then win_screen()
-  elseif global_state == tie_screen then tie_screen()
+  if global_state == state_init_game then init_game()
+  elseif global_state == state_next_player then next_player()
+  elseif global_state == state_select_position then select_position()
+  elseif global_state == state_win_screen then win_screen()
+  elseif global_state == state_tie_screen then tie_screen()
   else debugmsg = 'invalid global state!!!'
   end
 end
@@ -341,96 +343,38 @@ function draw_main_screen()
   elseif grid_selector_position<9 then y_ =2
   end
   y = 30 + 30*y_
-  spr(002,x,y)
+  drawspr(002,x,y)
 
-  -- draw score
-  print('Score: '.. score[1] .. ' vs. ' .. score[2], 1, 110 ,12)
+  -- print headline text
+  draw_main_screen_headline_text()
 
   -- write debug message
   if (is_debugmode) then print(debugmsg, 1, 120, 12) end -- maybe make this flash?
 end
 
-function _draw()
-  -- clear the screen
-  rectfill(0,0,128,128,3)
+function draw_win_screen()
+  draw_main_screen()
 
-  -- draw grid
-  line(48, 20, 48, 108, 15)
-  line(76, 20, 76, 108, 15)
-  line(20, 48, 108, 48, 15)
-  line(20, 76, 108, 76, 15)
+  print('this works', 1, 100, 12)
+end
 
-  -- draw symbols
-  for i=0,8 do
-    x = 30 + 30* ((i) % 3)
-    if i<3 then y_ =0
-    elseif i<6 then y_ =1
-    elseif i<9 then y_ =2
-    end
-    y = 30 + 30*y_
-    spr_val=0
-    if grid[i] == 0 then spr_val=3
-    else spr_val=grid[i]-1
-    end
-    if count(win_pos) > 0 then
-      drawn = 0
-      for v in all(win_pos) do
-        if i == v then 
-          drawspr(spr_val,x,y,8) 
-          drawn=1
-        end
-      end
-      if drawn == 0 then drawspr(spr_val,x,y) end
-      drawn = nil
-    else
-      drawspr(spr_val,x,y)
-    end
-  end
-
-  -- draw selection cursor
-  x = 30 + 30* ((grid_selector_position) % 3)
-  if grid_selector_position<3 then y_ =0
-  elseif grid_selector_position<6 then y_ =1
-  elseif grid_selector_position<9 then y_ =2
-  end
-  y = 30 + 30*y_
-  spr(002,x,y)
-
-  -- draw score
-  print('Score: '.. score[1] .. ' vs. ' .. score[2], 1, 110 ,12)
-  --print('grid val:'..grid[grid_selector_position], 64, 110, 12)
-
-  --print('grid pos:'..grid_selector_position, 1, 110 ,12)
-  --print('grid val:'..grid[grid_selector_position], 64, 110, 12)
-  --grid_selector_position
-  --[[
-  --draw the lives
-  for i=1,lives do
-    spr(004,90+i*8,4)
-  end
-  ]]
-
-  --debug
-  --print("padx: "..padx,1,1,15)
-
-  --rectfill(padx,pady,padx+padw,pady+padh,15)
-  --circfill(ballx,bally,ballsize,15)
-
-  -- If win state, display message
-  if global_state == win_screen then
+function draw_main_screen_headline_text()
+  if global_state == state_win_screen then
     print('player ' .. currentplayer ..' wins!', 1, 1, 15)
     print('press any button for next round!', 1, 9, 15)
-  elseif global_state == tie_screen then
+  elseif global_state == state_tie_screen then
     print('it\'s  a tie!', 1, 1, 15)
     print('press any button for next round!', 1, 9, 15)
   else
-    --print("current player: "..currentplayer, 1, 1, 12)
     print("current player: ", 1, 2, 12)
-    spr(currentplayer-1,60,1)
+    drawspr(currentplayer-1,60,1)
+    print('Score: ', 1, 12 , 12)
+    print(score[1] .. '-' .. score[2], 26, 12, 7)
   end
+end
 
-  -- write debug message
-  if (is_debugmode) then print(debugmsg, 1, 120, 12) end -- maybe make this flash?
+function _draw()
+  draw_funcs[global_state]()
 end
 __gfx__
 00000000000000007777777700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
