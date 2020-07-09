@@ -11,6 +11,7 @@ Notes:
 -------------------------------------------------------------------------------
 -- Global Variables
 -------------------------------------------------------------------------------
+number_players = 1
 currentplayer = flr(rnd(1))
 gamewinner = -1 -- set to -1 when there is not yet a winner.
 grid = {[0] = 0,
@@ -204,14 +205,27 @@ function update_title_screen()
   end
 
   if (is_title_drawn == true and timer_count >= timer_end) then
-    title_present_options = true
+    title_options_drawn = true
+
+    title_options_selection = 1
   end
 
-  if  title_present_options == true then
-    r = 0
-    r = wait_for_any_input()
+  if  title_options_drawn == true then
+    -- if 'up' then y+1, if y>2 then y=0
+    if btnp(⬆️) then
+      number_players -= 1
+      if number_players < 1 then number_players = 2 end
+    end
 
-    if r == 1 then global_state = state_init_match end
+    -- if 'down' then y-1 % 3, if y<0 then y=2
+    if btnp(⬇️) then
+      number_players += 1
+      if number_players > 2 then number_players = 1 end
+    end
+
+    if btnp(4) or btnp(5) then -- O or X (https://pico-8.fandom.com/wiki/Btn)
+      global_state = state_init_match
+    end
   end
 end
 
@@ -304,7 +318,7 @@ function draw_title_screen()
     print('TIC', 1, 1, 11)
   end
   
-  if (title_present_options == true) then
+  if (title_options_drawn == true) then
     if (title_options_color == nil) then
       title_options_color = 1
       timer_count = 0
@@ -318,10 +332,12 @@ function draw_title_screen()
       -- end
       timer_count = 0
     end
-    print('Press any', 20, 40, title_options_color + 2)
-    print('button to', 20, 52, title_options_color + 1)
-    print('start playing!', 20, 64, title_options_color)
-     
+    
+    print('1 Player', 20, 40, title_options_color + 2)
+    print('2 Player', 20, 52, title_options_color + 1)
+
+    -- draw selection symbol 
+    print('⬆️', 10, 40 + (number_players - 1) * 12, title_options_color)
   end
 end
 
