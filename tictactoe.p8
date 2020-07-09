@@ -110,6 +110,9 @@ function update_next_player()
   else currentplayer = 1
   end
   
+  -- Set cursor position to top left
+  grid_selector_position = 0
+
   global_state = state_select_position
 
   debugmsg = 'update_next_player()'
@@ -118,55 +121,69 @@ end
 function update_select_position()
   x = grid_selector_position
 
-  ------------------------------------------------------------------
-  -- Listen for control input
-  ------------------------------------------------------------------
-    -- if 'right' then x+1, if x>2 then x=0
-  if btnp(➡️) then
-    x=x+1
-    if x % 3 == 0 then x=x-3 end
-  end
+  -- Process inputs for human players
+  if (currentplayer == 1 or number_players == 2) then
+    ------------------------------------------------------------------
+    -- Listen for control input
+    ------------------------------------------------------------------
+      -- if 'right' then x+1, if x>2 then x=0
+    if btnp(➡️) then
+      x=x+1
+      if x % 3 == 0 then x=x-3 end
+    end
 
-  -- if 'left' then x-1 % 3, if x<0 then x=2
-  if btnp(⬅️) then
-    x=x-1
-    if x % 3 == 2 or x < 0 then x=x+3 end
-  end
+    -- if 'left' then x-1 % 3, if x<0 then x=2
+    if btnp(⬅️) then
+      x=x-1
+      if x % 3 == 2 or x < 0 then x=x+3 end
+    end
 
-  -- if 'up' then y+1, if y>2 then y=0
-  if btnp(⬆️) then
-    x=x-3
-    if x<0 then x=x+9 end
-  end
+    -- if 'up' then y+1, if y>2 then y=0
+    if btnp(⬆️) then
+      x=x-3
+      if x<0 then x=x+9 end
+    end
 
-  -- if 'down' then y-1 % 3, if y<0 then y=2
-  if btnp(⬇️) then
-    x=x+3
-    if x>8 then x=x-9 end
-  end
+    -- if 'down' then y-1 % 3, if y<0 then y=2
+    if btnp(⬇️) then
+      x=x+3
+      if x>8 then x=x-9 end
+    end
 
-  grid_selector_position = x
+    grid_selector_position = x
 
-  if btnp(4) or btnp(5) then -- O or X (https://pico-8.fandom.com/wiki/Btn)
-		if grid[grid_selector_position] == 0 then
-		  grid[grid_selector_position] = currentplayer
+    if btnp(4) or btnp(5) then -- O or X (https://pico-8.fandom.com/wiki/Btn)
+      if grid[grid_selector_position] == 0 then
+        grid[grid_selector_position] = currentplayer
 
-      -- check if there is three in a row
-      win_result = check_win_condition()
+        -- check if there is three in a row
+        win_result = check_win_condition()
 
-      -- check if there's a potential draw
-      tie_result = check_tie_condition()
+        -- check if there's a potential draw
+        tie_result = check_tie_condition()
 
-      if win_result == 1 then
-        score[currentplayer] += 1
-        global_state = state_win_screen
-      elseif tie_result == 1 then
-        global_state = state_tie_screen
-      else global_state = state_next_player
+        if win_result == 1 then
+          score[currentplayer] += 1
+          global_state = state_win_screen
+        elseif tie_result == 1 then
+          global_state = state_tie_screen
+        else global_state = state_next_player
+        end
       end
     end
-	end
+  end
 
+  -- -- Process input for CPU player
+  -- if (number_players == 1 and currentplayer == 2) then
+  --   -- Random AI
+  --   -- Wait a couple seconds?
+  --   -- Visualize moving the cursor? At some set fraction of a second intervals?
+
+  --   for x=from,to do
+      
+  --   end
+  -- end
+  
   debugmsg = 'update_select_position()'
 end
 
