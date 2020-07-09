@@ -12,7 +12,7 @@ Notes:
 -- Global Variables
 -------------------------------------------------------------------------------
 number_players = 1
-cpu_difficulty = 2
+cpu_difficulty = 3
 currentplayer = flr(rnd(1))
 gamewinner = -1 -- set to -1 when there is not yet a winner.
 grid = {[0] = 0,
@@ -192,54 +192,130 @@ function update_select_position()
     end
 
     -- Very basic sequential AI
-    if (cpu_difficulty == 1) then
-      x=0
-      position_selected = false
-      while (x < 9 and position_selected == false and cpu_player_wait_fulfilled == true) do
-        if grid[x] == 0 then
-          position_selected = true
-          grid[x] = currentplayer
+    if cpu_player_wait_fulfilled == true then
+      if (cpu_difficulty == 1) then
+        x=0
+        position_selected = false
+        while (x < 9 and position_selected == false) do
+          if grid[x] == 0 then
+            position_selected = true
+            grid[x] = currentplayer
 
-          -- check if there is three in a row
-          win_result = check_win_condition()
+            -- check if there is three in a row
+            win_result = check_win_condition()
 
-          -- check if there's a potential draw
-          tie_result = check_tie_condition()
+            -- check if there's a potential draw
+            tie_result = check_tie_condition()
 
-          if win_result == 1 then
-            score[currentplayer] += 1
-            global_state = state_win_screen
-          elseif tie_result == 1 then
-            global_state = state_tie_screen
-          else global_state = state_next_player
+            if win_result == 1 then
+              score[currentplayer] += 1
+              global_state = state_win_screen
+            elseif tie_result == 1 then
+              global_state = state_tie_screen
+            else global_state = state_next_player
+            end
           end
+          x += 1
         end
-        x += 1
-      end
-    -- Random position AI
-    elseif (cpu_difficulty == 2) then
-      x=flr(rnd(9)) + 1
-      position_selected = false
-      while (position_selected == false and cpu_player_wait_fulfilled == true) do
-        if grid[x] == 0 then
-          position_selected = true
-          grid[x] = currentplayer
-
-          -- check if there is three in a row
-          win_result = check_win_condition()
-
-          -- check if there's a potential draw
-          tie_result = check_tie_condition()
-
-          if win_result == 1 then
-            score[currentplayer] += 1
-            global_state = state_win_screen
-          elseif tie_result == 1 then
-            global_state = state_tie_screen
-          else global_state = state_next_player
-          end
-        end
+      -- Random position AI
+      elseif (cpu_difficulty == 2) then
         x=flr(rnd(9)) + 1
+        position_selected = false
+        while (position_selected == false) do
+          if grid[x] == 0 then
+            position_selected = true
+            grid[x] = currentplayer
+
+            -- check if there is three in a row
+            win_result = check_win_condition()
+
+            -- check if there's a potential draw
+            tie_result = check_tie_condition()
+
+            if win_result == 1 then
+              score[currentplayer] += 1
+              global_state = state_win_screen
+            elseif tie_result == 1 then
+              global_state = state_tie_screen
+            else global_state = state_next_player
+            end
+          end
+          x=flr(rnd(9)) + 1
+        end
+      -- CPU AI that can detect a line that can be fulfilled
+      elseif (cpu_difficulty == 3) then
+        -- First pass is to try to identify a position which when populated would result in a line
+        -- and therefore a win.
+        -- If no such position exists then choose position randomly.
+        x=0
+        position_selected = false
+        while (x < 9 and position_selected == false) do
+          if grid[x] == 0 then
+            grid[x] = currentplayer
+
+            -- check if there is three in a row
+            win_result = check_win_condition()
+
+            if win_result == 1 then
+              position_selected = true
+              score[currentplayer] += 1
+              global_state = state_win_screen
+            else
+              grid[x] = 0
+            end
+          end
+          x += 1
+        end
+
+        -- Second pass is to try to identify a position which when populated would result in a line for the player
+        -- and therefore a loss for the CPU.
+        x=0
+        otherplayer = currentplayer - 1
+        if otherplayer == 0 then otherplayer = 2 end
+        while (x < 9 and position_selected == false) do
+          if grid[x] == 0 then
+            grid[x] = otherplayer
+
+            -- check if there is three in a row
+            win_result = check_win_condition()
+
+            if win_result == 1 then
+              position_selected = true
+              grid[x] = currentplayer
+              win_pos = {} -- Hacky way to ensure win doesn't actually happen
+              win_result = 0
+              global_state = state_next_player
+            else
+              grid[x] = 0
+              global_state = state_next_player
+            end
+          end
+          x += 1
+        end
+
+        -- If no win or lose positions exist, choose randomly.
+        x=flr(rnd(9)) + 1
+        while (position_selected == false) do
+          if grid[x] == 0 then
+            position_selected = true
+            grid[x] = currentplayer
+
+            -- check if there is three in a row
+            win_result = check_win_condition()
+
+            -- check if there's a potential draw
+            tie_result = check_tie_condition()
+
+            if win_result == 1 then
+              score[currentplayer] += 1
+              global_state = state_win_screen
+            elseif tie_result == 1 then
+              global_state = state_tie_screen
+            else global_state = state_next_player
+            end
+          end
+          x=flr(rnd(9)) + 1
+        end
       end
     end
   end
