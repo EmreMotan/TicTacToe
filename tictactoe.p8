@@ -174,15 +174,46 @@ function update_select_position()
   end
 
   -- -- Process input for CPU player
-  -- if (number_players == 1 and currentplayer == 2) then
-  --   -- Random AI
-  --   -- Wait a couple seconds?
-  --   -- Visualize moving the cursor? At some set fraction of a second intervals?
+  if (number_players == 1 and currentplayer == 2) then
+    -- Random AI
+    -- Wait a couple seconds?
+    -- Visualize moving the cursor? At some set fraction of a second intervals?
 
-  --   for x=from,to do
-      
-  --   end
-  -- end
+    if (cpu_player_wait_fulfilled == nil or cpu_player_wait_fulfilled == true) then
+      cpu_player_wait_fulfilled = false
+      timer_count = 0
+      timer_end = 30
+    end
+    
+    if (cpu_player_wait_fulfilled == false and timer_count >= timer_end) then
+      cpu_player_wait_fulfilled = true
+      timer_count = 0
+    end
+
+    x=0
+    position_selected = false
+    while (x < 9 and position_selected == false and cpu_player_wait_fulfilled == true) do
+      if grid[x] == 0 then
+        position_selected = true
+        grid[x] = currentplayer
+
+        -- check if there is three in a row
+        win_result = check_win_condition()
+
+        -- check if there's a potential draw
+        tie_result = check_tie_condition()
+
+        if win_result == 1 then
+          score[currentplayer] += 1
+          global_state = state_win_screen
+        elseif tie_result == 1 then
+          global_state = state_tie_screen
+        else global_state = state_next_player
+        end
+      end
+      x += 1
+    end
+  end
   
   debugmsg = 'update_select_position()'
 end
@@ -368,6 +399,11 @@ function draw_main_screen_headline_text()
   else
     print("current player: ", 1, 2, 12)
     drawspr(currentplayer-1,60,1)
+    if (currentplayer == 1 or number_players == 2) then
+      print("("..currentplayer..")", 68, 2, 12)
+    elseif (currentplayer == 2) then
+      print("(CPU)", 68, 2, 12)
+    end
     print('Score: ', 1, 12 , 12)
     print(score[1] .. '-' .. score[2], 26, 12, 7)
   end
