@@ -12,6 +12,7 @@ Notes:
 -- Global Variables
 -------------------------------------------------------------------------------
 number_players = 1
+cpu_difficulty = 2
 currentplayer = flr(rnd(1))
 gamewinner = -1 -- set to -1 when there is not yet a winner.
 grid = {[0] = 0,
@@ -190,28 +191,56 @@ function update_select_position()
       timer_count = 0
     end
 
-    x=0
-    position_selected = false
-    while (x < 9 and position_selected == false and cpu_player_wait_fulfilled == true) do
-      if grid[x] == 0 then
-        position_selected = true
-        grid[x] = currentplayer
+    -- Very basic sequential AI
+    if (cpu_difficulty == 1) then
+      x=0
+      position_selected = false
+      while (x < 9 and position_selected == false and cpu_player_wait_fulfilled == true) do
+        if grid[x] == 0 then
+          position_selected = true
+          grid[x] = currentplayer
 
-        -- check if there is three in a row
-        win_result = check_win_condition()
+          -- check if there is three in a row
+          win_result = check_win_condition()
 
-        -- check if there's a potential draw
-        tie_result = check_tie_condition()
+          -- check if there's a potential draw
+          tie_result = check_tie_condition()
 
-        if win_result == 1 then
-          score[currentplayer] += 1
-          global_state = state_win_screen
-        elseif tie_result == 1 then
-          global_state = state_tie_screen
-        else global_state = state_next_player
+          if win_result == 1 then
+            score[currentplayer] += 1
+            global_state = state_win_screen
+          elseif tie_result == 1 then
+            global_state = state_tie_screen
+          else global_state = state_next_player
+          end
         end
+        x += 1
       end
-      x += 1
+    -- Random position AI
+    elseif (cpu_difficulty == 2) then
+      x=flr(rnd(9)) + 1
+      position_selected = false
+      while (position_selected == false and cpu_player_wait_fulfilled == true) do
+        if grid[x] == 0 then
+          position_selected = true
+          grid[x] = currentplayer
+
+          -- check if there is three in a row
+          win_result = check_win_condition()
+
+          -- check if there's a potential draw
+          tie_result = check_tie_condition()
+
+          if win_result == 1 then
+            score[currentplayer] += 1
+            global_state = state_win_screen
+          elseif tie_result == 1 then
+            global_state = state_tie_screen
+          else global_state = state_next_player
+          end
+        end
+        x=flr(rnd(9)) + 1
+      end
     end
   end
   
