@@ -36,6 +36,42 @@ score = {[1] = 0,
 -- play music, if we got it
 -- music(0)
 
+timer_count = 0
+
+function _init()
+  state_init_match, state_init_game, state_next_player, state_select_position, state_win_screen, state_tie_screen, state_title_screen = 1, 2, 3, 4, 5, 6, 7
+
+  draw_funcs = {[state_init_game]=draw_nothing,
+                [state_init_match]=draw_main_screen,
+                [state_next_player]=draw_main_screen,
+                [state_select_position]=draw_main_screen,
+                [state_win_screen]=draw_win_screen,
+                [state_tie_screen]=draw_main_screen,
+                [state_title_screen]=draw_title_screen
+              }
+            
+  update_funcs = {[state_init_game]=update_init_game,
+                [state_init_match]=update_init_match,
+                [state_next_player]=update_next_player,
+                [state_select_position]=update_select_position,
+                [state_win_screen]=update_win_screen,
+                [state_tie_screen]=update_tie_screen,
+                [state_title_screen]=update_title_screen
+              }
+  --_draw = _draw_main_screen()
+  global_state = state_init_game
+end
+
+function _update()
+  update_funcs[global_state]()
+
+  timer_count += 1
+end
+
+function _draw()
+  draw_funcs[global_state]()
+end
+
 function update_init_game()
   global_state = state_title_screen
 
@@ -131,6 +167,177 @@ function update_select_position()
 	end
 
   debugmsg = 'update_select_position()'
+end
+
+function update_win_screen()
+  r = 0
+  r = wait_for_any_input()
+
+  if r == 1 then global_state = state_init_match end
+end
+
+function update_title_screen()
+  if is_title_drawn == nil then
+    is_title_drawn = false
+  end
+
+  if is_title_drawn == false then
+    if draw_tic == nil then
+      draw_tic = true
+      draw_tac = false
+      draw_toe  = false
+      timer_end = 30
+    end
+    
+    if (draw_tac == false and timer_count >= timer_end) then
+      draw_tac = true
+      timer_count = 0
+      timer_end = 30
+    end
+
+    if (draw_toe == false and timer_count >= timer_end) then
+      draw_toe = true
+      timer_count = 0
+      timer_end = 30
+      is_title_drawn = true
+    end
+  end
+
+  if (is_title_drawn == true and timer_count >= timer_end) then
+    title_present_options = true
+  end
+
+  if  title_present_options == true then
+    r = 0
+    r = wait_for_any_input()
+
+    if r == 1 then global_state = state_init_match end
+  end
+end
+
+function update_tie_screen()
+  r = 0
+  r = wait_for_any_input()
+
+  if r == 1 then global_state = state_init_match end
+end
+
+function drawspr(_spr,_x,_y,_c)
+  --palt(0,false)
+  if _c !=  nil then
+    pal(7,_c)
+  end
+  spr(_spr,_x,_y)
+  pal()
+end
+
+function draw_main_screen()
+  -- clear the screen
+  rectfill(0,0,128,128,3)
+
+  -- draw grid
+  line(48, 20, 48, 108, 15)
+  line(76, 20, 76, 108, 15)
+  line(20, 48, 108, 48, 15)
+  line(20, 76, 108, 76, 15)
+
+  -- draw symbols
+  for i=0,8 do
+    x = 30 + 30* ((i) % 3)
+    if i<3 then y_ =0
+    elseif i<6 then y_ =1
+    elseif i<9 then y_ =2
+    end
+    y = 30 + 30*y_
+    spr_val=0
+    if grid[i] == 0 then spr_val=3
+    else spr_val=grid[i]-1
+    end
+    if count(win_pos) > 0 then
+      drawn = 0
+      for v in all(win_pos) do
+        if i == v then 
+          drawspr(spr_val,x,y,8) 
+          drawn=1
+        end
+      end
+      if drawn == 0 then drawspr(spr_val,x,y) end
+      drawn = nil
+    else
+      drawspr(spr_val,x,y)
+    end
+  end
+
+  -- draw selection cursor
+  x = 30 + 30* ((grid_selector_position) % 3)
+  if grid_selector_position<3 then y_ =0
+  elseif grid_selector_position<6 then y_ =1
+  elseif grid_selector_position<9 then y_ =2
+  end
+  y = 30 + 30*y_
+  drawspr(002,x,y)
+
+  -- print headline text
+  draw_main_screen_headline_text()
+
+  -- write debug message
+  if (is_debugmode) then print(debugmsg, 1, 120, 12) end -- maybe make this flash?
+end
+
+function draw_win_screen()
+  draw_main_screen()
+end
+
+function draw_nothing()
+  i=1
+end
+
+function draw_title_screen()
+  -- clear the screen
+  rectfill(0,0,128,128,3)
+
+  if (draw_tic == true and draw_tac == true and draw_toe == true) then
+    print('TIC TAC TOE', 1, 1, 11)
+  elseif (draw_tic == true and draw_tac == true and draw_toe == false) then
+    print('TIC TAC', 1, 1, 11)
+  elseif (draw_tic == true and draw_tac == false and draw_toe == false) then
+    print('TIC', 1, 1, 11)
+  end
+  
+  if (title_present_options == true) then
+    if (title_options_color == nil) then
+      title_options_color = 1
+      timer_count = 0
+      timer_end = 2
+    end
+    
+    if timer_count >= timer_end then
+      title_options_color += 1
+      -- if title_options_color > 16 then  
+      --   title_options_color = 1
+      -- end
+      timer_count = 0
+    end
+    print('Press any', 20, 40, title_options_color + 2)
+    print('button to', 20, 52, title_options_color + 1)
+    print('start playing!', 20, 64, title_options_color)
+     
+  end
+end
+
+function draw_main_screen_headline_text()
+  if global_state == state_win_screen then
+    print('player ' .. currentplayer ..' wins!', 1, 1, 15)
+    print('press any button for next round!', 1, 9, 15)
+  elseif global_state == state_tie_screen then
+    print('it\'s  a tie!', 1, 1, 15)
+    print('press any button for next round!', 1, 9, 15)
+  else
+    print("current player: ", 1, 2, 12)
+    drawspr(currentplayer-1,60,1)
+    print('Score: ', 1, 12 , 12)
+    print(score[1] .. '-' .. score[2], 26, 12, 7)
+  end
 end
 
 function check_win_condition()
@@ -229,27 +436,6 @@ function check_tie_condition()
   return result
 end
 
-function update_win_screen()
-  r = 0
-  r = wait_for_any_input()
-
-  if r == 1 then global_state = state_init_match end
-end
-
-function update_title_screen()
-  r = 0
-  r = wait_for_any_input()
-
-  if r == 1 then global_state = state_init_match end
-end
-
-function update_tie_screen()
-  r = 0
-  r = wait_for_any_input()
-
-  if r == 1 then global_state = state_init_match end
-end
-
 function wait_for_any_input()
   r = 0
 
@@ -260,141 +446,6 @@ function wait_for_any_input()
   return r
 end
 
-function drawspr(_spr,_x,_y,_c)
-  --palt(0,false)
-  if _c !=  nil then
-    pal(7,_c)
-  end
-  spr(_spr,_x,_y)
-  pal()
-end
-
-function _init()
-  state_init_match, state_init_game, state_next_player, state_select_position, state_win_screen, state_tie_screen, state_title_screen = 1, 2, 3, 4, 5, 6, 7
-
-  draw_funcs = {[state_init_game]=draw_nothing,
-                [state_init_match]=draw_main_screen,
-                [state_next_player]=draw_main_screen,
-                [state_select_position]=draw_main_screen,
-                [state_win_screen]=draw_win_screen,
-                [state_tie_screen]=draw_main_screen,
-                [state_title_screen]=draw_title_screen
-              }
-            
-  update_funcs = {[state_init_game]=update_init_game,
-                [state_init_match]=update_init_match,
-                [state_next_player]=update_next_player,
-                [state_select_position]=update_select_position,
-                [state_win_screen]=update_win_screen,
-                [state_tie_screen]=update_tie_screen,
-                [state_title_screen]=update_title_screen
-              }
-  --_draw = _draw_main_screen()
-  global_state = state_init_game
-end
-
-function _update()
-  update_funcs[global_state]()
-
-  -- if global_state == state_init_game then update_init_game()
-  -- elseif global_state == state_next_player then update_next_player()
-  -- elseif global_state == state_select_position then update_select_position()
-  -- elseif global_state == state_win_screen then update_win_screen()
-  -- elseif global_state == state_tie_screen then update_tie_screen()
-  -- else debugmsg = 'invalid global state!!!'
-  -- end
-end
-
---function _draw()
---end
-
-function draw_main_screen()
-  -- clear the screen
-  rectfill(0,0,128,128,3)
-
-  -- draw grid
-  line(48, 20, 48, 108, 15)
-  line(76, 20, 76, 108, 15)
-  line(20, 48, 108, 48, 15)
-  line(20, 76, 108, 76, 15)
-
-  -- draw symbols
-  for i=0,8 do
-    x = 30 + 30* ((i) % 3)
-    if i<3 then y_ =0
-    elseif i<6 then y_ =1
-    elseif i<9 then y_ =2
-    end
-    y = 30 + 30*y_
-    spr_val=0
-    if grid[i] == 0 then spr_val=3
-    else spr_val=grid[i]-1
-    end
-    if count(win_pos) > 0 then
-      drawn = 0
-      for v in all(win_pos) do
-        if i == v then 
-          drawspr(spr_val,x,y,8) 
-          drawn=1
-        end
-      end
-      if drawn == 0 then drawspr(spr_val,x,y) end
-      drawn = nil
-    else
-      drawspr(spr_val,x,y)
-    end
-  end
-
-  -- draw selection cursor
-  x = 30 + 30* ((grid_selector_position) % 3)
-  if grid_selector_position<3 then y_ =0
-  elseif grid_selector_position<6 then y_ =1
-  elseif grid_selector_position<9 then y_ =2
-  end
-  y = 30 + 30*y_
-  drawspr(002,x,y)
-
-  -- print headline text
-  draw_main_screen_headline_text()
-
-  -- write debug message
-  if (is_debugmode) then print(debugmsg, 1, 120, 12) end -- maybe make this flash?
-end
-
-function draw_win_screen()
-  draw_main_screen()
-end
-
-function draw_nothing()
-  i=1
-end
-
-
-function draw_title_screen()
-  -- clear the screen
-  rectfill(0,0,128,128,3)
-
-  print('TIC TAC TOE', 1, 1, 11)
-end
-
-function draw_main_screen_headline_text()
-  if global_state == state_win_screen then
-    print('player ' .. currentplayer ..' wins!', 1, 1, 15)
-    print('press any button for next round!', 1, 9, 15)
-  elseif global_state == state_tie_screen then
-    print('it\'s  a tie!', 1, 1, 15)
-    print('press any button for next round!', 1, 9, 15)
-  else
-    print("current player: ", 1, 2, 12)
-    drawspr(currentplayer-1,60,1)
-    print('Score: ', 1, 12 , 12)
-    print(score[1] .. '-' .. score[2], 26, 12, 7)
-  end
-end
-
-function _draw()
-  draw_funcs[global_state]()
-end
 __gfx__
 00000000000000007777777700000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 000000000000000070000007000000000ff0ff000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
