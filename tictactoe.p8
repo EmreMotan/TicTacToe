@@ -382,10 +382,11 @@ function update_select_position()
     end
 
     if position_selected == true and tie_result == 0 and win_result == 0 then sfx(3) end
-    if ((win_result == 1 and number_players == 2) or (win_result ==1 and currentplayer == 1)) then sfx(4) end
-    if (win_result == 1 and number_players == 1 and currentplayer == 2) then sfx(5) end
-    if (tie_result == 1) then sfx(6) end
   end
+
+  if ((win_result == 1 and number_players == 2) or (win_result ==1 and currentplayer == 1)) then sfx(4) end
+  if (win_result == 1 and number_players == 1 and currentplayer == 2) then sfx(5) end
+  if (tie_result == 1) then sfx(6) end
   
   debugmsg = 'update_select_position()'
 end
