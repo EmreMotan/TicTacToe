@@ -122,6 +122,7 @@ function _draw()
 end
 
 function update_init_game()
+  music(0)
   global_state = state_title_screen
 
   debugmsg = 'update_init_game()'
@@ -150,6 +151,9 @@ function update_init_match()
   --global_state = state_title_screen
 
   debugmsg = 'update_init_match()'
+
+  win_result = 0
+  tie_result = 0
 end
 
 function update_next_player()
@@ -217,12 +221,17 @@ function update_select_position()
           global_state = state_tie_screen
         else global_state = state_next_player
         end
+
+        sfx(2)
+      else
+        sfx(1)
       end
     end
   end
 
   -- -- Process input for CPU player
   if (number_players == 1 and currentplayer == 2) then
+    position_selected = false
     -- Random AI
     -- Wait a couple seconds?
     -- Visualize moving the cursor? At some set fraction of a second intervals?
@@ -347,7 +356,7 @@ function update_select_position()
         end
 
         -- If no win or lose positions exist, choose randomly.
-        x=flr(rnd(9)) + 1
+        x=flr(rnd(9))
         while (position_selected == false) do
           if grid[x] == 0 then
             position_selected = true
@@ -367,10 +376,15 @@ function update_select_position()
             else global_state = state_next_player
             end
           end
-          x=flr(rnd(9)) + 1
+          x=flr(rnd(9))
         end
       end
     end
+
+    if position_selected == true and tie_result == 0 and win_result == 0 then sfx(3) end
+    if ((win_result == 1 and number_players == 2) or (win_result ==1 and currentplayer == 1)) then sfx(4) end
+    if (win_result == 1 and number_players == 1 and currentplayer == 2) then sfx(5) end
+    if (tie_result == 1) then sfx(6) end
   end
   
   debugmsg = 'update_select_position()'
@@ -418,16 +432,19 @@ function update_title_screen()
     if btnp(⬆️) then
       number_players -= 1
       if number_players < 1 then number_players = 2 end
+      sfx(1)
     end
 
     -- if 'down' then y-1 % 3, if y<0 then y=2
     if btnp(⬇️) then
       number_players += 1
       if number_players > 2 then number_players = 1 end
+      sfx(1)
     end
 
     if btnp(4) or btnp(5) then -- O or X (https://pico-8.fandom.com/wiki/Btn)
       global_state = state_init_match
+      sfx(2)
     end
   end
 end
@@ -521,21 +538,25 @@ function draw_title_screen()
   -- clear the screen
   rectfill(0,0,128,128,3)
 
+  title_x = 40
+  title_y = 40
   if (draw_tic == true and draw_tac == true and draw_toe == true) then
-    print('TIC TAC TOE', 1, 1, 11)
+    print('TIC-TAC-TOE', title_x, title_y, 11)
   elseif (draw_tic == true and draw_tac == true and draw_toe == false) then
-    print('TIC TAC', 1, 1, 11)
+    print('TIC-TAC', title_x, title_y, 11)
   elseif (draw_tic == true and draw_tac == false and draw_toe == false) then
-    print('TIC', 1, 1, 11)
+    print('TIC', title_x, title_y, 11)
   end
   
-  if (title_options_drawn == true) then    
-    print('1 Player', 20, 40, 11)
-    print('2 Player', 20, 52, 11)
+  if (title_options_drawn == true) then
+    options_x = 42
+    options_y = 52
+    print('1 Player', options_x, options_y, 11)
+    print('2 Player', options_x, options_y + 12, 11)
 
     -- draw cursor
-    ent_title_cursor.pos_x = 10
-    ent_title_cursor.pos_y = 38 + (number_players - 1) * 12
+    ent_title_cursor.pos_x = options_x - 10
+    ent_title_cursor.pos_y = options_y - 2 + (number_players - 1) * 12
     draw_ent(ent_title_cursor)
   end
 end
@@ -829,6 +850,12 @@ __label__
 
 __sfx__
 011000200c0531c000273131a000246152461500000000000c053000002460000000246152461527313000000c053000000000000000246150030024615000000c05324615246152461524615000002731300000
+00010000100500d0500b0500b0500b0500c0500e05010050100500b05003050030500000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000100000000000000230502505027050290502b0500000030050000003405000000380503a050000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0001000000000000003a05037050350503405032050300502e0502c05029050270502505023050220500000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+0005000000000000000000023050230502305023050000000000025000230502305023050120501205012050120501205013050130501305014050140501505015050160501a0501e05021050270502b05031050
+00050000000001005010050100501005010050100500f0500f0500d050090500705007050070500705007050070500705007050070500705007050070500705007050080500a0500b0500e0500d0500b05008050
+000100001675016750167501675016750167501675016750177501b7501c7501e7501f750207502175021750227502275022750227502275022750217501f7501c7501975014750117500e7500e7500c7500b750
 __music__
 02 00424344
 
